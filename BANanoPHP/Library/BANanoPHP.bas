@@ -17,6 +17,13 @@ Sub Class_Globals
 	Public const FILE_LOG As String = "LogFile"
 	Public const FILE_APPEND As String = "FileAppend"
 	Public const FILE_COPY As String = "FileCopy"
+	Public const FILE_RENAME As String = "FileRename"
+	Public const FILE_DELETE As String = "FileDelete"
+	Public const DIRECTORY_MAKE As String = "DirectoryMake"
+	Public const FILE_GETHTML As String = "FileGetHTML"
+	Public const FILE_GETJSON As String = "FileGetJSON"
+	Public const DIRECTORY_ZIP As String = "DirectoryZip"
+	
 	Type BANAnoPHPDirList(dnum As Int, fnum As Int, dirs As List, files As List)
 End Sub
 
@@ -27,21 +34,21 @@ End Sub
 'get the directly structure from php call
 Sub GetDirectoryList(sout As String) As BANAnoPHPDirList
 	'initialize the structure
-	Dim dir As BANAnoPHPDirList
-	dir.initialize
-	dir.dirs.initialize
-	dir.dnum = 0
-	dir.fnum = 0
-	dir.files.Initialize
+	Dim DIR As BANAnoPHPDirList
+	DIR.initialize
+	DIR.dirs.initialize
+	DIR.dnum = 0
+	DIR.fnum = 0
+	DIR.files.Initialize
 	'
 	If sout.startswith("{") Then
 		Dim soutm As Map = BANano.fromjson(sout)
-		dir.dnum = soutm.get("dnum")
-		dir.fnum = soutm.get("fnum")
-		dir.files = soutm.get("files")
-		dir.dirs = soutm.get("dirs")	
+		DIR.dnum = soutm.get("dnum")
+		DIR.fnum = soutm.get("fnum")
+		DIR.files = soutm.get("files")
+		DIR.dirs = soutm.get("dirs")	
 	End If
-	Return dir
+	Return DIR
 End Sub
 
 'rolling copyright
@@ -85,6 +92,21 @@ Sub BuildGetFile(fileName As String) As Map
 	Return se
 End Sub
 
+'build the code to get the contents
+Sub BuildFileGetHTML(url As String) As Map
+	Dim se As Map = CreateMap()
+	se.put("url", url)
+	Return se
+End Sub
+
+'build the code to get the contents
+Sub BuildFileGetJSON(url As String) As Map
+	Dim se As Map = CreateMap()
+	se.put("url", url)
+	Return se
+End Sub
+
+
 'build the code to write contents to file, will overwite
 Sub BuildWriteFile(fileName As String, fileContents As String) As Map
 	Dim se As Map = CreateMap()
@@ -101,6 +123,14 @@ Sub BuildFileCopy(source As String, target As String) As Map
 	Return se
 End Sub
 
+'build code to rename the files
+Sub BuildFileRename(source As String, target As String) As Map
+	Dim se As Map = CreateMap()
+	se.Put("source", source)
+	se.Put("target", target)
+	Return se
+End Sub
+
 'build the directory listing
 Sub BuildDirectoryList(path As String) As Map
 	Dim se As Map = CreateMap()
@@ -108,7 +138,77 @@ Sub BuildDirectoryList(path As String) As Map
 	Return se
 End Sub
 
+'build the directory zip
+Sub BuildDirectoryZip(path As String) As Map
+	Dim se As Map = CreateMap()
+	se.put("path", path)
+	Return se
+End Sub
+
+'build the file to delete
+Sub BuildFileDelete(filex As String) As Map
+	Dim se As Map = CreateMap()
+	se.put("filex", filex)
+	Return se
+End Sub
+
+'build the directory make
+Sub BuildDirectoryMake(dirPath As String) As Map
+	Dim se As Map = CreateMap()
+	se.put("dirpath", dirPath)
+	Return se
+End Sub
+
+
 #if PHP
+
+function DirectoryZip($path) {
+	ini_set("zlib.output_compression", "Off");
+	$files = glob($path);
+	if (!empty($files)) {
+		$zip = new ZipArchive();
+		$tmp_name = tempnam("/tmp", "zipfile");
+		$res = $zip->open($tmp_name . ".zip", ZipArchive::CREATE);
+		if ($res === true) {
+			foreach($files as $file) {
+				if (is_file($file) || is_link($file)) {
+					$zip->addFile($file);
+				}
+			}
+			$zip->close();
+			if (file_exists($tmp_name . ".zip")) {
+				$file_name = 'archive.zip';
+				$file_size = filesize($tmp_name . ".zip");
+				header('Content-Type: application/octet-stream; Content-Disposition: attachment');
+				readfile($tmp_name . ".zip");
+				unlink($tmp_name . ".zip");
+				unlink($tmp_name);
+			}
+		}
+	}
+}
+
+function FileGetJSON($url) {
+	$f = file_get_contents($url);
+	echo $f;
+}
+
+
+function FileGetHTML($url) {
+	$f = file_get_contents($url);
+	echo $f;
+}
+
+function DirectoryMake($dirpath) {
+	mkdir($dirpath, 0700, true);
+}
+
+function FileDelete($filex) {
+	if (file_exists($filex)) {
+		unlink($filex);
+	}
+}
+
 function FileExists($path) {
 	if (file_exists($path)) {
     	echo "yes";
@@ -139,6 +239,9 @@ function FileCopy($source, $target) {
 	copy($source, $target);
 }
 
+function FileRename($source, $target) {
+	rename($source, $target);
+}
 
 function GetFile($fileName) {
 	$f = file_get_contents($fileName);

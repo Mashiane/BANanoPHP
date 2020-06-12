@@ -108,6 +108,44 @@ Sub BANano_Ready
 	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Append to file mashy.txt"))
 	BANano.CallInlinePHPWait(bPHP.FILE_APPEND, bPHP.BuildWriteFile("./mashy.txt", "Let's append some text!"))
 	
+	'copy a file
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Copy mashy.txt"))
+	BANano.CallInlinePHPWait(bPHP.FILE_COPY, bPHP.BuildFileCopy("./mashy.txt", "./assets/mashy1.txt"))
+	Dim sfc As String = BANano.CallInlinePHPWait(bPHP.FILE_EXISTS, bPHP.BuildFileExists("./assets/mashy1.txt"))
+	body.Append($"File Copy Exists: ${sfc}"$)
+	body.Append("<br>")
+	'
+	'rename a file
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Rename mashy1.txt"))
+	BANano.CallInlinePHPWait(bPHP.FILE_RENAME, bPHP.BuildFileRename("./assets/mashy1.txt", "./assets/mashy2.txt"))
+	Dim sfc As String = BANano.CallInlinePHPWait(bPHP.FILE_EXISTS, bPHP.BuildFileExists("./assets/mashy2.txt"))
+	body.Append($"File Rename Exists: ${sfc}"$)
+	body.Append("<br>")
+	'
+	'delete a file
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Delete mashy2.txt"))
+	BANano.CallInlinePHPWait(bPHP.FILE_DELETE, bPHP.BuildFileDelete("./assets/mashy2.txt"))
+	Dim sfc As String = BANano.CallInlinePHPWait(bPHP.FILE_EXISTS, bPHP.BuildFileExists("./assets/mashy2.txt"))
+	body.Append($"File Deleted Exists: ${sfc}"$)
+	body.Append("<br>")
+	
+	'create a directory
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Create recursive directories"))
+	BANano.CallInlinePHPWait(bPHP.DIRECTORY_MAKE, bPHP.BuildDirectoryMake("./assets/anele/mashy/mbanga/is/enjoying/BANanoPHP"))
+	
+	'get html from URL
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Get html from url"))
+	Dim html As String = BANano.CallInlinePHPWait(bPHP.FILE_GETHTML, bPHP.BuildFileGetHTML("http://www.google.com"))
+	Log(html)
+	'
+	'get json from URL
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Get json from url"))
+	Dim json As String = BANano.CallInlinePHPWait(bPHP.FILE_GETJSON, bPHP.BuildFileGetJSON("http://jsonip.com"))
+	body.Append($"URL JSON: ${json}"$)
+	'
+'	'directory zip
+'	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Directory zip"))
+'	BANano.CallInlinePHPWait(bPHP.DIRECTORY_ZIP, bPHP.BuildDirectoryZip("."))
 	
 	
 End Sub
