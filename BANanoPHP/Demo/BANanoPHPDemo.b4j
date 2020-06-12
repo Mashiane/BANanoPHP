@@ -1,0 +1,113 @@
+﻿AppType=JavaFX
+Build1=Default,b4j.example
+Group=Default Group
+Library1=jcore
+Library2=jfx
+Library3=banano
+Library4=bananophp
+Library5=bananopostprocessor
+NumberOfFiles=0
+NumberOfLibraries=5
+NumberOfModules=0
+Version=8.3
+@EndOfDesignText@
+#IgnoreWarnings: 12, 15
+#Region Project Attributes 
+	#MergeLibraries: True
+	#LibraryAuthor: Anele Mashy Mbanga
+	#LibraryName: BANanoPHPDemo
+#End Region
+
+Sub Process_Globals
+	Public BANano As BANano 'ignore
+	Public AppName As String = "BANanoPHPDemo"
+	Public AppTitle As String = "BANanoPHPDemo"
+	Private Publish As String = "C:\laragon\www"
+	Public ServerIP As String = "localhost"
+	Public Version As String = "1.00"
+	Public Port As String = "8080"
+	Private BP As BANanoPostProcessor
+End Sub
+
+Sub AppStart (Form1 As Form, Args() As String)
+	BP.Initialize
+	BP.RedirectOutput(File.DirApp,"log.txt")
+	
+	'initialize banano for first use
+	BANano.Initialize("BANano", AppName, DateTime.now)
+	BANano.HTML_NAME = "index.html"
+	BANano.Header.Title = AppTitle
+	BANano.TranspilerOptions.UseServiceWorker = False
+	BANano.TranspilerOptions.MergeAllCSSFiles = True
+	BANano.TranspilerOptions.MergeAllJavascriptFiles = True
+	BANano.TranspilerOptions.MinifyOnline = False
+	
+	
+	'set php settings
+	BANano.PHP_NAME = $"${AppName}.php"$
+	BANano.PHPHost = $"http://${ServerIP}:${Port}/${AppName}/"$
+	BANano.PHPAddHeader("Access-Control-Allow-Origin: *")	
+	'
+	BANano.Build(Publish)
+	BP.OpenLog(File.DirApp, "log.txt")
+	
+	BP.PublishPath = Publish
+	BP.ShortName = AppName
+	BP.AssetsPath = BANano.ASSETS_FOLDER
+	BP.ScriptsPath = BANano.SCRIPTS_FOLDER
+	BP.StylesPath = BANano.STYLES_FOLDER
+	BP.ScriptFile = BANano.JAVASCRIPT_NAME
+	BP.OpenOnPort(True, Port)
+	ExitApplication
+End Sub
+
+'Return true to allow the default exceptions handler to handle the uncaught exception.
+Sub Application_Error (Error As Exception, StackTrace As String) As Boolean
+	Return True
+End Sub
+
+
+Sub BANano_Ready
+	'get the body of the page
+	Dim body As BANanoElement = BANano.GetElement("#body")
+	'declare our php class
+	Dim bPHP As BANanoPHP
+	bPHP.Initialize
+	'
+	Dim logFile As String = "./phplog.txt"
+	
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Started BANanoPHP"))
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Created mashy.txt"))
+	'
+	'1. write to a file - overwrite
+	BANano.CallInlinePHPWait(bPHP.FILE_WRITE, bPHP.BuildWriteFile("./mashy.txt", "This is a test file..."))
+	
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Get file directory listing for root"))
+	
+	'2. get directory listing
+	Dim assetsList As String = BANano.CallInlinePHPWait(bPHP.DIRECTORY_LIST, bPHP.BuildDirectoryList("./"))
+	Dim dl As BANAnoPHPDirList = bPHP.GetDirectoryList(assetsList)
+	body.Append(assetsList)
+	body.Append("<br>")
+	Log(dl)
+	
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Check file existence for mashy.txt"))
+	
+	'3. check the existence of the file
+	Dim sfc As String = BANano.CallInlinePHPWait(bPHP.FILE_EXISTS, bPHP.BuildFileExists("./mashy.txt"))
+	body.Append(sfc)
+	body.Append("<br>")
+	
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Read file contents for mashy.txt"))
+	
+	'4. get the file contents
+	Dim strfc As String = BANano.CallInlinePHPWait(bPHP.GET_FILE, bPHP.BuildGetFile("./mashy.txt"))
+	body.Append(strfc)
+	body.Append("<br>")
+	'
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Append to file mashy.txt"))
+	BANano.CallInlinePHPWait(bPHP.FILE_APPEND, bPHP.BuildWriteFile("./mashy.txt", "Let's append some text!"))
+	
+	
+	
+End Sub
