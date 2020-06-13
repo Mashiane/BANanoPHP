@@ -23,7 +23,10 @@ Sub Class_Globals
 	Public const FILE_GETHTML As String = "FileGetHTML"
 	Public const FILE_GETJSON As String = "FileGetJSON"
 	Public const DIRECTORY_ZIP As String = "DirectoryZip"
-	
+	Public const DIRECTORY_DELETE As String = "DirectoryDelete"
+	Public const DIRECTORY_LISTRECURSIVE As String = "DirectoryListRecursive"
+	Public const FILE_UNZIP As String = "FileUnzip"
+	Public const DIRECTORY_COPY As String = "DirectoryCopy"
 	Type BANAnoPHPDirList(dnum As Int, fnum As Int, dirs As List, files As List)
 End Sub
 
@@ -138,10 +141,20 @@ Sub BuildDirectoryList(path As String) As Map
 	Return se
 End Sub
 
+'build the file unzip
+Sub BuildFileUnzip(zipfile As String, extractTo As String) As Map
+	Dim se As Map = CreateMap()
+	se.put("zipfile", zipfile)
+	se.Put("extractTo", extractTo)
+	Return se
+End Sub
+
+
 'build the directory zip
-Sub BuildDirectoryZip(path As String) As Map
+Sub BuildDirectoryZip(path As String, zipname As String) As Map
 	Dim se As Map = CreateMap()
 	se.put("path", path)
+	se.Put("zipname", zipname)
 	Return se
 End Sub
 
@@ -159,32 +172,151 @@ Sub BuildDirectoryMake(dirPath As String) As Map
 	Return se
 End Sub
 
+'build the directory delete
+Sub BuildDirectoryDelele(dirPath As String) As Map
+	Dim se As Map = CreateMap()
+	se.put("dir", dirPath)
+	Return se
+End Sub
+
+'build the directory recursive listing
+Sub BuildDirectoryListRecursive(dirPath As String) As Map
+	Dim se As Map = CreateMap()
+	se.put("path", dirPath)
+	Return se
+End Sub
+
+'build directory copy
+Sub BuildDirectoryCopy(src As String, dst As String) As Map
+	Dim se As Map = CreateMap()
+	se.put("src", src)
+	se.put("dst", dst)
+	Return se
+End Sub
+
 
 #if PHP
 
-function DirectoryZip($path) {
-	ini_set("zlib.output_compression", "Off");
-	$files = glob($path);
-	if (!empty($files)) {
-		$zip = new ZipArchive();
-		$tmp_name = tempnam("/tmp", "zipfile");
-		$res = $zip->open($tmp_name . ".zip", ZipArchive::CREATE);
-		if ($res === true) {
-			foreach($files as $file) {
-				if (is_file($file) || is_link($file)) {
-					$zip->addFile($file);
-				}
-			}
-			$zip->close();
-			if (file_exists($tmp_name . ".zip")) {
-				$file_name = 'archive.zip';
-				$file_size = filesize($tmp_name . ".zip");
-				header('Content-Type: application/octet-stream; Content-Disposition: attachment');
-				readfile($tmp_name . ".zip");
-				unlink($tmp_name . ".zip");
-				unlink($tmp_name);
-			}
+/**
+* FlxZipArchive, Extends ZipArchiv.
+* Add Dirs with Files and Subdirs.
+*
+* <code>
+*  $archive = new FlxZipArchive;
+*  // .....
+*  $archive->addDir( 'test/blub', 'blub' );
+* </code>
+*/
+class FlxZipArchive extends ZipArchive {
+    /**
+     * Add a Dir with Files and Subdirs to the archive
+     *
+     * @param string $location Real Location
+     * @param string $name Name in Archive
+     * @author Nicolas Heimann
+     * @access private
+     **/
+
+    public function addDir($location, $name) {
+        $this->addEmptyDir($name);
+
+        $this->addDirDo($location, $name);
+     } // EO addDir;
+
+    /**
+     * Add Files & Dirs to archive.
+     *
+     * @param string $location Real Location
+     * @param string $name Name in Archive
+     * @author Nicolas Heimann
+     * @access private
+     **/
+
+    private function addDirDo($location, $name) {
+        $name .= '/';
+        $location .= '/';
+
+        // Read all Files in Dir
+        $dir = opendir ($location);
+        while ($file = readdir($dir))
+        {
+            if ($file == '.' || $file == '..') continue;
+
+            // Rekursiv, If dir: FlxZipArchive::addDir(), else ::File();
+            $do = (filetype( $location . $file) == 'dir') ? 'addDir' : 'addFile';
+            $this->$do($location . $file, $name . $file);
+        }
+    } // EO addDirDo();
+}
+
+function DirectoryCopy($src, $dst) {  
+    // open the source directory 
+    $dir = opendir($src);  
+    // Make the destination directory if not exist 
+    @mkdir($dst);  
+    // Loop through the files in source directory 
+    foreach (scandir($src) as $file) {  
+        if (( $file != '.' ) && ( $file != '..' )) {  
+            if ( is_dir($src . '/' . $file) )  
+            {  
+                // Recursively calling custom copy function 
+                // for sub directory  
+                DirectoryCopy($src . '/' . $file, $dst . '/' . $file);  
+            }  
+            else {  
+                copy($src . '/' . $file, $dst . '/' . $file);  
+            }  
+        }  
+    }  
+    closedir($dir); 
+}   
+
+function FileUnzip($zipfile, $extractTo) {
+	// Create new zip class 
+	$zip = new ZipArchive; 
+	$zip->open($zipfile); 
+	// Extracts to current directory 
+	$zip->extractTo($extractTo); 
+	$zip->close();  
+}
+
+
+function DirectoryListRecursive($path) {
+	$iterator = new RecursiveDirectoryIterator($path);
+    // skip dot files while iterating 
+    $iterator->setFlags(RecursiveDirectoryIterator::SKIP_DOTS);
+	$rii = new RecursiveIteratorIterator($iterator, RecursiveIteratorIterator::SELF_FIRST);
+
+    $files = array(); 
+    foreach ($rii as $file) {
+	   	$fname = $file->getPathname();
+		$fname = str_replace('\\', '/', $fname);
+		$files[] = $fname;
+	}
+		
+    $output = json_encode($files);
+    echo($output);
+}
+
+function DirectoryDelete($dir) {
+	$iter = new RecursiveDirectoryIterator($dir);
+	foreach (new RecursiveIteratorIterator($iter, RecursiveIteratorIterator::CHILD_FIRST) as $f) {
+		if ($f->isDir()) {
+			rmdir($f->getPathname());
+		} else {
+			unlink($f->getPathname());
 		}
+	}
+	rmdir($dir);
+}
+
+
+function DirectoryZip($path, $zipname) {
+	$za = new FlxZipArchive;
+	$res = $za->open($zipname, ZipArchive::CREATE);
+	if($res === TRUE) {
+    	$za->addDir($path, basename($path));
+    	$za->close();
 	}
 }
 

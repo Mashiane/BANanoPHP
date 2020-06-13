@@ -132,20 +132,40 @@ Sub BANano_Ready
 	'create a directory
 	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Create recursive directories"))
 	BANano.CallInlinePHPWait(bPHP.DIRECTORY_MAKE, bPHP.BuildDirectoryMake("./assets/anele/mashy/mbanga/is/enjoying/BANanoPHP"))
-	
+'	BANano.CallInlinePHPWait(bPHP.FILE_WRITE, bPHP.BuildWriteFile("./assets/anele/mashy/mbanga/is/enjoying/BANanoPHP/mashnew.txt", "Did we write?"))
+'	
 	'get html from URL
 	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Get html from url"))
 	Dim html As String = BANano.CallInlinePHPWait(bPHP.FILE_GETHTML, bPHP.BuildFileGetHTML("http://www.google.com"))
-	Log(html)
+	'Log(html)
 	'
 	'get json from URL
 	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Get json from url"))
 	Dim json As String = BANano.CallInlinePHPWait(bPHP.FILE_GETJSON, bPHP.BuildFileGetJSON("http://jsonip.com"))
 	body.Append($"URL JSON: ${json}"$)
 	'
-'	'directory zip
-'	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Directory zip"))
-'	BANano.CallInlinePHPWait(bPHP.DIRECTORY_ZIP, bPHP.BuildDirectoryZip("."))
+
+	'delete directory with everything
+	'BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Delete directory"))
+	'Dim json As String = BANano.CallInlinePHPWait(bPHP.DIRECTORY_DELETE, bPHP.BuildDirectoryDelele("./assets/anele"))
+	'
+	'recursive listing
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Recursive listing"))
+	Dim rl As String = BANano.CallInlinePHPWait(bPHP.DIRECTORY_LISTRECURSIVE, bPHP.BuildDirectoryListRecursive("."))
+	Dim lst As List = BANano.FromJson(rl)
+	Log(lst)
+
+	'directory zip
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Directory zip"))
+	BANano.CallInlinePHPWait(bPHP.DIRECTORY_ZIP, bPHP.BuildDirectoryZip("./scripts", "./scripts.zip"))
 	
+	'file unzip
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "File Unzip"))
+	BANano.CallInlinePHPWait(bPHP.FILE_UNZIP, bPHP.BuildFileUnzip("./scripts.zip", "./assets"))
 	
+	'copy a directory
+	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Directory Copy"))
+	BANano.CallInlinePHPWait(bPHP.DIRECTORY_COPY, bPHP.BuildDirectoryCopy("./scripts", "./scripts backup"))
+	'
+		
 End Sub
