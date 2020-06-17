@@ -27,6 +27,7 @@ Sub Class_Globals
 	Public const DIRECTORY_LISTRECURSIVE As String = "DirectoryListRecursive"
 	Public const FILE_UNZIP As String = "FileUnzip"
 	Public const DIRECTORY_COPY As String = "DirectoryCopy"
+	Public const EXCEL_TEST As String = "ExcelTest"
 	Type BANAnoPHPDirList(dnum As Int, fnum As Int, dirs As List, files As List)
 End Sub
 

@@ -167,5 +167,5 @@ Sub BANano_Ready
 	BANano.CallInlinePHPWait(bPHP.FILE_LOG, bPHP.BuildWriteFile(logFile, "Directory Copy"))
 	BANano.CallInlinePHPWait(bPHP.DIRECTORY_COPY, bPHP.BuildDirectoryCopy("./scripts", "./scripts backup"))
 	'
-		
+			
 End Sub
